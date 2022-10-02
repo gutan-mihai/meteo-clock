@@ -214,14 +214,12 @@ byte dispHum;
 int dispPres;
 int dispCO2 = -1;
 int dispRain;
-int dispAlt = 0;  //int
 
 // массивы графиков
 int tempHour[15], tempDay[15];
 int humHour[15], humDay[15];
 int pressHour[15], pressDay[15];
 int co2Hour[15], co2Day[15];
-int altHour[15], altDay[15];
 int delta;
 uint32_t pressure_array[6];
 uint32_t sumX, sumY, sumX2, sumXY;
@@ -278,8 +276,6 @@ uint8_t GG[8] = { 0b11110, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000,
 uint8_t FF[8] = { 0b00100, 0b01110, 0b10101, 0b10101, 0b10101, 0b01110, 0b00100, 0b00000 };  // Ф
 uint8_t LL[8] = { 0b01111, 0b01001, 0b01001, 0b01001, 0b01001, 0b01001, 0b10001, 0b00000 };  // Л
 uint8_t ZZ[8] = { 0b10101, 0b10101, 0b10101, 0b01110, 0b10101, 0b10101, 0b10101, 0b00000 };  // Ж
-uint8_t UU[8] = { 0b10101, 0b10101, 0b10101, 0b01110, 0b10101, 0b10101, 0b10101, 0b00000 };  // У
-uint8_t IU[8] = { 0b10101, 0b10101, 0b10101, 0b01110, 0b10101, 0b10101, 0b10101, 0b00000 };  // Ю
 
 // индикатор питания (с)НР
 // сеть
@@ -449,7 +445,7 @@ void setup() {
   lcd.print(F("BME280... "));
   Serial.print(F("BME280... "));
   delay(50);
-  if (bme.begin(&Wire)) {
+  if (bme.begin(BME280_ADDRESS, &Wire)) {
     lcd.print(F("OK"));
     Serial.println(F("OK"));
   } else {
@@ -482,7 +478,7 @@ void setup() {
   mhz19.setAutoCalibration(false);
 #endif
   rtc.begin();
-  bme.begin(&Wire);
+  bme.begin(BME280_ADDRESS, &Wire);
 #endif
 
   bme.setSampling(
@@ -493,7 +489,7 @@ void setup() {
     Adafruit_BME280::FILTER_OFF
   );
 
-  if (RESET_CLOCK || rtc.lostPower()) {
+  if (RESET_CLOCK) { // || rtc.lostPower()
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
@@ -509,8 +505,6 @@ void setup() {
     pressure_array[i] = Pressure;  // забить весь массив текущим давлением
   }
 
-  // dispAlt = (float)bme.readAltitude(SEALEVELPRESSURE_HPA);
-
   // заполняем графики текущим значением
   readSensors();
   for (byte i = 0; i < 15; i++) {  // счётчик от 0 до 14
@@ -518,8 +512,6 @@ void setup() {
     tempDay[i] = dispTemp;
     humHour[i] = dispHum;
     humDay[i] = dispHum;
-    altHour[i] = dispAlt;
-    altDay[i] = dispAlt;
     pressHour[i] = PRESSURE ? 0 : dispPres;
     pressDay[i] = PRESSURE ? 0 : dispPres;
   }
@@ -533,7 +525,6 @@ void setup() {
 }
 
 void loop() {
-  /*
   if (testTimer(brightTimerD, BRIGHT_TIMER)) {
     checkBrightness();  // яркость
   }
@@ -557,5 +548,4 @@ void loop() {
       redrawPlot();  // перерисовываем график
     }
   }
-  */
 }

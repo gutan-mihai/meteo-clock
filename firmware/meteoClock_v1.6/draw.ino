@@ -66,11 +66,6 @@ void drawSensors() {
     drawPres(dispPres, 0, 0);
   }
 
-  if (mode0scr != 5) {                      // Высота (с)НР ----------------------------
-  } else {                                  // мелко высоту не выводим (с)НР
-    drawAlt(dispAlt, 0, 0);
-  }
-
   if (!bigDig) {                            // дождь (с)НР -----------------------------
     lcd.setCursor(5, 3);
     lcd.print(F(" rain     "));
@@ -136,9 +131,6 @@ void drawSensors() {
         break;
       case 4:
         drawHum(dispHum, 0, 0);
-        break;
-      case 5:
-        drawHum(dispAlt, 0, 0);
         break;
     }
   }
@@ -255,29 +247,6 @@ void drawPres(int dispPres, byte x, byte y) {   // Давление крупно
   }
 
   lcd.print(F("mm"));
-}
-
-void drawAlt(float dispAlt, byte x, byte y) {   // Высота крупно на главном экране (с)НР -----------------------------
-  if (dispAlt >= 1000) {
-    drawDig((int(dispAlt) % 10000) / 1000, x , y);
-    x += 4;
-  }
-  drawDig((int(dispAlt) % 1000) / 100, x , y);
-  drawDig((int(dispAlt) % 100) / 10, x + 4, y);
-  drawDig(int(dispAlt) % 10 , x + 8, y);
-  if (dispAlt < 1000) {       // десятые доли метра, если высота ниже 1000 м. (с)НР
-    lcd.setCursor(x + 12, y + 1 + (bigDig && DISPLAY_TYPE) * 2);  // десятые мелкими цифрами
-    lcd.print((int(dispAlt * 10.0)) % 10);
-    if (bigDig && DISPLAY_TYPE == 1) lcd.setCursor(x + 11, y + 3);
-    else lcd.setCursor(x + 11, y + 1);
-    lcd.print(".");
-    x -= 1; // сдвинуть букву m левее
-  }  else {
-    x -= 4;
-  }
-  if (bigDig && DISPLAY_TYPE == 1) lcd.setCursor(x + 14, 3);
-  else lcd.setCursor(x + 14, 1);
-  lcd.print("m");
 }
 
 void drawTemp(float dispTemp, byte x, byte y) { // Температура крупно на главном экране (с)НР ----------------------------

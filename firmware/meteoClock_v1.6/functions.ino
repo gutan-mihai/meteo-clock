@@ -23,7 +23,6 @@ void modesTick() {
     if (mode >= 240) {
       switch (mode) {
         case 250:             // Перебираем все варианты режима установки времени
-        Serial.println(podMode);
           if (podMode > 3) {
             podMode = 0;
           }
@@ -42,11 +41,7 @@ void modesTick() {
             }
           }
 
-          if (podMode == 0 || podMode == 1) {
-            podMode++;
-            settingsTimeManual = podMode;
-          }
-
+          settingsTimeManual = podMode;
           changeFlag = true;
           break;
         case 251:             // Перебираем все варианты режима отк. дисплея
@@ -123,7 +118,11 @@ void modesTick() {
         mode0scr = 0;         // Переключение рехима работы главного экрана (с)НР
       }
     } else if (mode > 240) {
-      podMode = 1;       // Переключение на меню сохранения (с)НР
+      if (mode == 250) {
+        podMode++;
+      } else {
+        podMode = 1;       // Переключение на меню сохранения (с)НР
+      }
     }
         
     changeFlag = true;
@@ -141,13 +140,6 @@ void modesTick() {
         bigDig = !bigDig;
         break;
       case 250:       // реж. установки времени
-        if (podMode == 0 || podMode == 3) {
-          mode = 255;
-          podMode = 1;
-        } else {
-          podMode++;
-        }
-        break;
       case 251:       // реж. отк. дисплея
       case 252:       // реж. индикатора
       case 253:       // ярк. экрана
@@ -217,16 +209,13 @@ void modesTick() {
             EEPROM.write(11, schedulePowerStatus);
           }
 
-          Serial.println(settingsTimeManual);
-          Serial.println(now.year());
-          Serial.println(now.month());
-          Serial.println(now.day());
-          Serial.println(manualHours);
-          Serial.println(manualMinutes);
-          if (settingsTimeManual == 1) {
+          if (EEPROM.read(12) != settingsTimeManual) {
             EEPROM.write(12, settingsTimeManual);
-            Serial.println("rtc.adjust");
-            rtc.adjust(DateTime(now.year(), now.month(), now.day(), manualHours, manualMinutes));
+          }
+
+          if (settingsTimeManual > 0) {
+            now = rtc.now();
+            rtc.adjust(DateTime(now.year(), now.month(), now.day(), manualHours, manualMinutes, now.second()));
           }
 
           if (EEPROM.read(0) != 122) {
@@ -240,7 +229,6 @@ void modesTick() {
         
         if (mode == 250) {
           podMode = settingsTimeManual;       // если выбран режим установки времени
-          Serial.println("podMode: " + podMode);
         }
 
         if (mode == 251) {
@@ -276,9 +264,6 @@ void modesTick() {
       lcd.createChar(5, IA);  //Я
       lcd.createChar(6, YY);  //Ы
       lcd.createChar(7, AA);  //Э
-      lcd.createChar(8, UU);  //У
-      lcd.createChar(9, IU);  //Ю
-      lcd.createChar(11, CH); //Ч
       lcd.createChar(0, ZZ);  //Ж
       lcd.setCursor(0, 0);
     }
@@ -335,7 +320,7 @@ void modesTick() {
           break;
         case 7:
 #if (WEEK_LANG == 1)
-          lcd.print(F("\8CT.\7BPEMEH\4"));  // ---Режим установка времени
+          lcd.print(F("YCT.BPEMEH\4"));  // ---Режим установка времени
 #else
           lcd.print(F("Setting time"));
 #endif
@@ -419,11 +404,9 @@ void modesTick() {
     }
 
     if (mode == 250) {                        // --------------------- показать  "Установка времени"
-      if (podMode == 0 || podMode == 1) {
-        settingsTimeManual = podMode;
-      }
+      settingsTimeManual = podMode;
 #if (WEEK_LANG == 1)
-      lcd.print(F("\8CT.BPEMEH\4:"));
+      lcd.print(F("YCT.BPEMEH\4:"));
 #else
       lcd.print(F("Setting time:"));
 #endif
@@ -435,20 +418,20 @@ void modesTick() {
 #endif
       } else {
 #if (WEEK_LANG == 1)
-        lcd.print(F("BP\8\11H\8\9 "));
+        lcd.print(F("BPYCHHYIU "));
 #else
         lcd.print(F("Manual "));
 #endif
-        // lcd.setCursor(0, 1);
+        lcd.setCursor(0, 1);
 #if (WEEK_LANG == 1)
         lcd.print(F("\3AC\6: "));
 #else
         lcd.print(F("Hours: "));
 #endif
         lcd.print(manualHours);
-        // lcd.setCursor(0, 2);        
+        lcd.setCursor(0, 2);
 #if (WEEK_LANG == 1)
-        lcd.print(F("M\4H\8T\6: "));
+        lcd.print(F("M\4HYT\6: "));
 #else
         lcd.print(F("Minutes: "));
 #endif
@@ -520,7 +503,6 @@ void modesTick() {
 #endif
           break;
       }
-
     }
     
     if (mode == 253) {                        // --------------------- показать  "Ярк.экрана"
@@ -599,12 +581,6 @@ void redrawPlot() {
     case 8:
       drawPlot(0, 3, 15, 4, PRESS_MIN, PRESS_MAX, (int*)pressDay, "p ", "da", mode);
       break;
-    case 9:
-    drawPlot(0, 3, 15, 4, ALT_MIN, ALT_MAX, (int*)altHour, "m ", "hr", mode);
-      break;
-    case 10:
-    drawPlot(0, 3, 15, 4, ALT_MIN, ALT_MAX, (int*)altDay, "m ", "da", mode);
-      break;
   }
 #else                         // для дисплея 1602
   switch (mode) {
@@ -632,10 +608,6 @@ void redrawPlot() {
     case 8:
       drawPlot(0, 1, 12, 2, PRESS_MIN, PRESS_MAX, (int*)pressDay, "p", "d", mode);
       break;
-    case 9: drawPlot(0, 1, 12, 2, ALT_MIN, ALT_MAX, (int*)altHour, "m", "h", mode);
-      break;
-    case 10: drawPlot(0, 1, 12, 2, ALT_MIN, ALT_MAX, (int*)altDay, "m", "d", mode);
-      break;
   }
 #endif
 }
@@ -644,7 +616,6 @@ void readSensors() {
   bme.takeForcedMeasurement();
   dispTemp = bme.readTemperature();
   dispHum = bme.readHumidity();
-  // dispAlt = ((float)dispAlt * 1 + bme.readAltitude(SEALEVELPRESSURE_HPA)) / 2;  // усреднение, чтобы не было резких скачков (с)НР
   dispPres = (float)bme.readPressure() * 0.00750062;
 #if (CO2_SENSOR == 1)
   dispCO2 = mhz19.getPPM();
@@ -660,33 +631,29 @@ void plotSensorsTick() {
       tempHour[i] = tempHour[i + 1];
       humHour[i] = humHour[i + 1];
       pressHour[i] = pressHour[i + 1];
-      altHour[i] = altHour[i + 1];
       co2Hour[i] = co2Hour[i + 1];
     }
 
     tempHour[14] = dispTemp;
     humHour[14] = dispHum;
     pressHour[14] = dispPres;
-    altHour[14] = dispAlt;
     co2Hour[14] = dispCO2;
     pressHour[14] = PRESSURE ? dispRain : dispPres;
   }
 
   // 1.5 или 2 часовой таймер
   if (testTimer(dayPlotTimerD, dayPlotTimer)) {
-    long averTemp = 0, averHum = 0, averPress = 0, averAlt = 0, averCO2 = 0;
+    long averTemp = 0, averHum = 0, averPress = 0, averCO2 = 0;
     for (byte i = 0; i < 15; i++) {
       averTemp += tempHour[i];
       averHum += humHour[i];
       averPress += pressHour[i];
-      averAlt += altHour[i];
       averCO2 += co2Hour[i];
     }
 
     averTemp /= 15;
     averHum /= 15;
     averPress /= 15;
-    averAlt /= 15;
     averCO2 /= 15;
 
     for (byte i = 0; i < 14; i++) {
@@ -699,7 +666,6 @@ void plotSensorsTick() {
     tempDay[14] = averTemp;
     humDay[14] = averHum;
     pressDay[14] = averPress;
-    altDay[14] = averAlt;
     co2Day[14] = averCO2;
   }
 
