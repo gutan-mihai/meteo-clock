@@ -1,3 +1,7 @@
+uint8_t manualHours = 12;     // задается в меню установки времени
+uint8_t manualMinutes = 0;    // задается в меню установки времени
+bool savingManualTime = false;
+
 /*
   mode:
   0 - Главный экран
@@ -140,6 +144,10 @@ void modesTick() {
         bigDig = !bigDig;
         break;
       case 250:       // реж. установки времени
+        savingManualTime = true;
+        mode = 255;
+        podMode = 1;
+        break;
       case 251:       // реж. отк. дисплея
       case 252:       // реж. индикатора
       case 253:       // ярк. экрана
@@ -209,13 +217,17 @@ void modesTick() {
             EEPROM.write(11, schedulePowerStatus);
           }
 
-          if (EEPROM.read(12) != settingsTimeManual) {
-            EEPROM.write(12, settingsTimeManual);
-          }
+          if (savingManualTime) {
+            if (EEPROM.read(12) != settingsTimeManual) {
+              EEPROM.write(12, settingsTimeManual);
+            }
 
-          if (settingsTimeManual > 0) {
-            now = rtc.now();
-            rtc.adjust(DateTime(now.year(), now.month(), now.day(), manualHours, manualMinutes, now.second()));
+            if (settingsTimeManual > 0) {
+              now = rtc.now();
+              rtc.adjust(DateTime(now.year(), now.month(), now.day(), manualHours, manualMinutes, now.second()));
+            }
+
+            savingManualTime = false;
           }
 
           if (EEPROM.read(0) != 122) {
